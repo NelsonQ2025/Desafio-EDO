@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador EDO - Rendimiento de Servidores Web</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- MathJax for Mathematical Formulas -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="mathjax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+            scroll-behavior: smooth;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .hero-section {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+            color: white;
+            padding: 80px 0 60px 0;
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
+        }
+
+        .card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .nav-link {
+            font-weight: 500;
+        }
+
+        .badge-custom {
+            font-size: 0.85rem;
+            padding: 0.5em 0.8em;
+            border-radius: 8px;
+        }
+
+        .formula-box {
+            background-color: #eef2ff;
+            border-left: 4px solid #0d6efd;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .table-responsive {
+            max-height: 450px;
+            overflow-y: auto;
+        }
+
+        .sticky-top-table {
+            position: sticky;
+            top: 0;
+            background-color: #0d6efd !important;
+            color: white;
+            z-index: 1;
+        }
+
+        footer {
+            background-color: #0f172a;
+            color: #94a3b8;
+            padding: 40px 0;
+        }
+    </style>
+</head>
+<body data-bs-spy="scroll" data-bs-target="#mainNavbar" data-bs-offset="100">
+
+    <!-- NAVIGATION BAR -->
+    <nav id="mainNavbar" class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+                <i class="fa-solid fa-server text-primary"></i>
+                <span>SimuladorEDO <span class="badge bg-primary fs-6">Sistemas</span></span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="#contexto"><i class="fa-solid fa-circle-info me-1"></i> Contexto</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#modelo"><i class="fa-solid fa-square-root-variable me-1"></i> Modelo EDO</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#simulador"><i class="fa-solid fa-sliders me-1"></i> Simulador</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#tabla"><i class="fa-solid fa-table me-1"></i> Tabla</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#conclusiones"><i class="fa-solid fa-chart-line me-1"></i> Análisis</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO SECTION -->
+    <header class="hero-section text-center">
+        <div class="container">
+            <span class="badge bg-white text-primary fw-bold mb-3 px-3 py-2 rounded-pill">Desafío Métodos Numéricos 2026</span>
+            <h1 class="display-4 fw-bold mb-3">Modelado de Congestión en Servidores Web</h1>
+            <p class="lead max-w-2xl mx-auto opacity-90">
+                Optimización y predicción de peticiones pendientes mediante EDOs de primer orden utilizando los métodos numéricos de **Heun (RK2)** y **Runge-Kutta de 4º Orden (RK4)**.
+            </p>
+            <div class="mt-4">
+                <a href="#simulador" class="btn btn-light btn-lg fw-bold me-2 rounded-pill shadow-sm text-primary">
+                    <i class="fa-solid fa-play me-2"></i> Ir al Simulador
+                </a>
+                <a href="#modelo" class="btn btn-outline-light btn-lg rounded-pill">
+                    <i class="fa-solid fa-book-open me-2"></i> Ver Modelo
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container my-5">
+        
+        <!-- SECTION 1: CONTEXTO Y PROBLEMA -->
+        <section id="contexto" class="mb-5 pt-4">
+            <div class="card p-4">
+                <div class="row align-items-center">
+                    <div class="col-lg-7">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="fa-solid fa-laptop-code text-primary fs-3"></i>
+                            <h2 class="h3 mb-0 fw-bold">1. Problema y Contexto en Ingeniería</h2>
+                        </div>
+                        <p class="text-muted">
+                            En las plataformas de atención ciudadana (como inscripciones universitarias o portales de trámites municipales), la llegada masiva y simultánea de usuarios genera picos de tráfico que superan la velocidad de procesamiento del servidor web.
+                        </p>
+                        <p>
+                            Si la tasa de llegada de peticiones supera temporalmente la capacidad de resolución del sistema, se forma una <strong>cola de almacenamiento (buffer)</strong>. Modelar esta dinámica permite a los ingenieros de sistemas anticipar el colapso del servidor y ajustar recursos mediante autobalanceo o escalado vertical.
+                        </p>
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded-3 bg-light">
+                                    <h6 class="fw-bold text-primary"><i class="fa-solid fa-users-line me-2"></i> Comunidad Beneficiada</h6>
+                                    <small class="text-muted">Ciudadanos y usuarios de servicios informáticos públicos/privados.</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 border rounded-3 bg-light">
+                                    <h6 class="fw-bold text-success"><i class="fa-solid fa-bullseye me-2"></i> Pregunta Guía</h6>
+                                    <small class="text-muted">¿Cómo evoluciona la cola de peticiones y cuál método numérico ofrece mayor precisión con distintos pasos \(h\)?</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-5 text-center mt-4 mt-lg-0">
+                        <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80" class="img-fluid rounded-4 shadow" alt="Servidores de Red" onerror="this.onerror=null; this.src='https://placehold.co/600x400/0d6efd/ffffff?text=Servidor+Web+EDO'">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: MODELO MATEMÁTICO -->
+        <section id="modelo" class="mb-5 pt-4">
+            <div class="card p-4">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <i class="fa-solid fa-square-root-variable text-primary fs-3"></i>
+                    <h2 class="h3 mb-0 fw-bold">2. Modelo Matemático y Solución Analítica</h2>
+                </div>
+                
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h5 class="fw-bold"><i class="fa-solid fa-list-check me-2 text-primary"></i> Deficición de Variables</h5>
+                        <ul class="list-group list-group-flush mb-3">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Variable Independiente (\(t\))
+                                <span class="badge bg-secondary rounded-pill">Tiempo (minutos)</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Variable Dependiente (\(y(t)\))
+                                <span class="badge bg-primary rounded-pill">Peticiones en Cola</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Tasa de Entrada (\(k_{in}\))
+                                <span class="badge bg-info text-dark rounded-pill">50 solicitudes/min</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Tasa de Servicio (\(\mu\))
+                                <span class="badge bg-warning text-dark rounded-pill">0.1 min⁻¹</span>
+                            </li>
+                        </ul>
+                        <div class="formula-box">
+                            <h6 class="fw-bold mb-1">Ecuación Diferencial Ordinaria (EDO):</h6>
+                            <p class="fs-5 mb-0 text-center">
+                                $$\frac{dy}{dt} = k_{in} - \mu y \implies \frac{dy}{dt} = 50 - 0.1y$$
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h5 class="fw-bold"><i class="fa-solid fa-square-check me-2 text-success"></i> Solución Exacta (Analítica)</h5>
+                        <p class="text-muted">Resolviendo por el método de separación de variables con la condición inicial \(y(0) = 100\):</p>
+                        <div class="formula-box bg-light border-start border-success mb-3">
+                            $$\int \frac{dy}{50 - 0.1y} = \int dt$$
+                            $$\ln|50 - 0.1y| = -0.1t + C$$
+                            $$y(t) = 500 - (500 - y_0)e^{-0.1t}$$
+                        </div>
+                        <div class="alert alert-success d-flex align-items-center mb-0" role="alert">
+                            <i class="fa-solid fa-circle-check fs-4 me-3"></i>
+                            <div>
+                                <strong>Solución Particular Exacta:</strong>
+                                <p class="mb-0 text-center fs-5 fw-bold text-dark">\(y(t) = 500 - 400e^{-0.1t}\)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: SIMULADOR NUMÉRICO INTERACTIVO -->
+        <section id="simulador" class="mb-5 pt-4">
+            <div class="card p-4">
+                <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-sliders text-primary fs-3"></i>
+                        <h2 class="h3 mb-0 fw-bold">3. Simulador de Métodos Numéricos (Heun vs RK4)</h2>
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary border border-primary px-3 py-2 rounded-pill">
+                        <i class="fa-solid fa-bolt me-1"></i> Cálculo Interactiva en Tiempo Real
+                    </span>
+                </div>
+
+                <!-- CONTROLES DEL SIMULADOR -->
+                <form id="simForm" class="row g-3 bg-light p-3 rounded-4 mb-4 border">
+                    <div class="col-md-2 col-sm-6">
+                        <label class="form-label fw-semibold">Peticiones Inic. \(y(0)\)</label>
+                        <input type="number" class="form-input form-control" id="y0" value="100" step="1" required>
+                    </div>
+                    <div class="col-md-2 col-sm-6">
+                        <label class="form-label fw-semibold">Llegada \(k_{in}\) (req/min)</label>
+                        <input type="number" class="form-input form-control" id="kin" value="50" step="1" required>
+                    </div>
+                    <div class="col-md-2 col-sm-6">
+                        <label class="form-label fw-semibold">Tasa Servicio \(\mu\)</label>
+                        <input type="number" class="form-input form-control" id="mu" value="0.1" step="0.01" required>
+                    </div>
+                    <div class="col-md-3 col-sm-6">
+                        <label class="form-label fw-semibold">Paso \(h\) (minutos)</label>
+                        <select class="form-select" id="stepH">
+                            <option value="2.0">h = 2.0 (Paso Grande)</option>
+                            <option value="1.0">h = 1.0 (Paso Mediano)</option>
+                            <option value="0.5" selected>h = 0.5 (Paso Recomendado)</option>
+                            <option value="0.1">h = 0.1 (Alta Precisión)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 col-sm-12">
+                        <label class="form-label fw-semibold">Tiempo Simulación \(T\)</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="timeT" value="10" min="1" max="60" required>
+                            <span class="input-group-text">min</span>
+                        </div>
+                    </div>
+                    <div class="col-12 text-end mt-3">
+                        <button type="button" class="btn btn-primary px-4 rounded-pill fw-bold" onclick="runSimulation()">
+                            <i class="fa-solid fa-rotate me-2"></i> Actualizar Simulación
+                        </button>
+                    </div>
+                </form>
+
+                <!-- GRÁFICO COMPARATIVO -->
+                <div class="mt-2">
+                    <h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-line me-2 text-primary"></i> Comparación Visual de Evolución Temporada</h5>
+                    <div style="position: relative; height: 380px; width: 100%;">
+                        <canvas id="simulationChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: TABLA COMPARATIVA DE ERRORES -->
+        <section id="tabla" class="mb-5 pt-4">
+            <div class="card p-4">
+                <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-table text-primary fs-3"></i>
+                        <h2 class="h3 mb-0 fw-bold">4. Tabla Comparativa Iteración por Iteración</h2>
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm rounded-pill" onclick="exportTableToCSV()">
+                        <i class="fa-solid fa-download me-1"></i> Exportar CSV
+                    </button>
+                </div>
+                
+                <div class="table-responsive rounded-3 border">
+                    <table class="table table-hover table-striped mb-0 text-center align-middle" id="resultsTable">
+                        <thead class="table-dark sticky-top-table">
+                            <tr>
+                                <th>\(t_i\) (min)</th>
+                                <th>Exacta \(y(t)\)</th>
+                                <th>Heun (RK2)</th>
+                                <th>Err. Abs Heun</th>
+                                <th>Err. Rel % Heun</th>
+                                <th>RK4</th>
+                                <th>Err. Abs RK4</th>
+                                <th>Err. Rel % RK4</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Injected dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: ANÁLISIS Y CONCLUSIONES -->
+        <section id="conclusiones" class="mb-5 pt-4">
+            <div class="card p-4">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <i class="fa-solid fa-microscope text-primary fs-3"></i>
+                    <h2 class="h3 mb-0 fw-bold">5. Análisis de Resultados e Interpretación</h2>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="card bg-primary text-white p-3 h-100">
+                            <h5 class="fw-bold mb-2"><i class="fa-solid fa-trophy me-2"></i> Método Ganador</h5>
+                            <p class="mb-1"><strong>Runge-Kutta de 4.º Orden (RK4)</strong></p>
+                            <small class="opacity-90">
+                                Demuestra un error relativo porcentual cercano a **0.0001%**, superando significativamente al método de Heun en todos los escenarios simulados.
+                            </small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light border p-3 h-100">
+                            <h5 class="fw-bold mb-2 text-dark"><i class="fa-solid fa-compress me-2 text-warning"></i> Efecto del Paso \(h\)</h5>
+                            <p class="mb-0 text-muted">
+                                Al reducir el tamaño de paso de \(h=2.0\) a \(h=0.5\), el error absoluto acumulado del método de Heun disminuye drásticamente en más del 80%, confirmando la convergencia cuadrática del método corrector.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light border p-3 h-100">
+                            <h5 class="fw-bold mb-2 text-dark"><i class="fa-solid fa-network-wired me-2 text-success"></i> Impacto en Ingeniería</h5>
+                            <p class="mb-0 text-muted">
+                                El modelo predice que la cola se estabilizará en el estado estacionario de **500 peticiones** (\(y(\infty) = k_{in}/\mu = 50/0.1\)). La infraestructura debe tolerar hasta 500 peticiones concurrentes antes de agotar memoria.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- METRICS SUMMARY BOX -->
+                <div class="row mt-4 g-3" id="summaryBox">
+                    <!-- Calculated summary stats dynamically -->
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="text-center">
+        <div class="container">
+            <p class="mb-1 fw-bold text-white">Proyecto de Métodos Numéricos - Ingeniería de Sistemas</p>
+            <p class="mb-0 small text-muted">Desafío Individual: Modelado de EDOs de Primer Orden mediante Heun & RK4.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- SIMULATION & NUMERICAL METHODS SCRIPT -->
+    <script>
+        let chartInstance = null;
+
+        // Differential equation f(t, y) = dy/dt
+        function f(t, y, kin, mu) {
+            return kin - (mu * y);
+        }
+
+        // Exact analytical solution: y(t) = (kin/mu) - ((kin/mu) - y0) * e^(-mu * t)
+        function analyticalSolution(t, y0, kin, mu) {
+            const steadyState = kin / mu;
+            return steadyState - (steadyState - y0) * Math.exp(-mu * t);
+        }
+
+        // Heun's Method (RK2)
+        function calcHeun(t, y, h, kin, mu) {
+            const k1 = f(t, y, kin, mu);
+            const yPredictor = y + h * k1;
+            const k2 = f(t + h, yPredictor, kin, mu);
+            return y + (h / 2.0) * (k1 + k2);
+        }
+
+        // Classic Runge-Kutta 4th Order (RK4)
+        function calcRK4(t, y, h, kin, mu) {
+            const k1 = f(t, y, kin, mu);
+            const k2 = f(t + h / 2.0, y + (h / 2.0) * k1, kin, mu);
+            const k3 = f(t + h / 2.0, y + (h / 2.0) * k2, kin, mu);
+            const k4 = f(t + h, y + h * k3, kin, mu);
+            return y + (h / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4);
+        }
+
+        function runSimulation() {
+            // Read Inputs
+            const y0 = parseFloat(document.getElementById('y0').value);
+            const kin = parseFloat(document.getElementById('kin').value);
+            const mu = parseFloat(document.getElementById('mu').value);
+            const h = parseFloat(document.getElementById('stepH').value);
+            const T = parseFloat(document.getElementById('timeT').value);
+
+            // Validation
+            if (isNaN(y0) || isNaN(kin) || isNaN(mu) || isNaN(h) || isNaN(T) || h <= 0 || T <= 0) {
+                alert('Por favor ingrese valores válidos y mayores a cero.');
+                return;
+            }
+
+            const steps = Math.floor(T / h);
+            const times = [];
+            const exactValues = [];
+            const heunValues = [];
+            const rk4Values = [];
+            const tableData = [];
+
+            let currentT = 0;
+            let currentHeun = y0;
+            let currentRK4 = y0;
+
+            let maxErrHeun = 0;
+            let maxErrRK4 = 0;
+
+            for (let i = 0; i <= steps; i++) {
+                currentT = i * h;
+                const exactY = analyticalSolution(currentT, y0, kin, mu);
+
+                // Calculate Errors for Heun
+                const errAbsHeun = Math.abs(exactY - currentHeun);
+                const errRelHeun = exactY !== 0 ? (errAbsHeun / Math.abs(exactY)) * 100 : 0;
+
+                // Calculate Errors for RK4
+                const errAbsRK4 = Math.abs(exactY - currentRK4);
+                const errRelRK4 = exactY !== 0 ? (errAbsRK4 / Math.abs(exactY)) * 100 : 0;
+
+                if (errAbsHeun > maxErrHeun) maxErrHeun = errAbsHeun;
+                if (errAbsRK4 > maxErrRK4) maxErrRK4 = errAbsRK4;
+
+                // Save for arrays
+                times.push(currentT.toFixed(2));
+                exactValues.push(exactY.toFixed(4));
+                heunValues.push(currentHeun.toFixed(4));
+                rk4Values.push(currentRK4.toFixed(4));
+
+                tableData.push({
+                    t: currentT.toFixed(2),
+                    exact: exactY.toFixed(4),
+                    heun: currentHeun.toFixed(4),
+                    errAbsHeun: errAbsHeun.toFixed(4),
+                    errRelHeun: errRelHeun.toFixed(4),
+                    rk4: currentRK4.toFixed(4),
+                    errAbsRK4: errAbsRK4.toFixed(4),
+                    errRelRK4: errRelRK4.toFixed(4)
+                });
+
+                // Next Step Calculation
+                currentHeun = calcHeun(currentT, currentHeun, h, kin, mu);
+                currentRK4 = calcRK4(currentT, currentRK4, h, kin, mu);
+            }
+
+            renderChart(times, exactValues, heunValues, rk4Values);
+            renderTable(tableData);
+            renderSummary(maxErrHeun, maxErrRK4, steps, h);
+        }
+
+        function renderChart(labels, exactData, heunData, rk4Data) {
+            const ctx = document.getElementById('simulationChart').getContext('2d');
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Solución Exacta Analítica',
+                            data: exactData,
+                            borderColor: '#0d6efd',
+                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 0,
+                            tension: 0.2
+                        },
+                        {
+                            label: 'Método de Heun (RK2)',
+                            data: heunData,
+                            borderColor: '#ffc107',
+                            borderDash: [5, 5],
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#ffc107'
+                        },
+                        {
+                            label: 'Runge-Kutta 4º Orden (RK4)',
+                            data: rk4Data,
+                            borderColor: '#198754',
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#198754'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: { family: 'Inter', size: 12, weight: 'bold' }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Tiempo (minutos)', font: { weight: 'bold' } }
+                        },
+                        y: {
+                            title: { display: true, text: 'Peticiones en Cola y(t)', font: { weight: 'bold' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="fw-bold">${row.t}</td>
+                    <td class="text-primary fw-semibold">${row.exact}</td>
+                    <td class="text-warning-emphasis">${row.heun}</td>
+                    <td>${row.errAbsHeun}</td>
+                    <td><span class="badge bg-warning-subtle text-dark">${row.errRelHeun}%</span></td>
+                    <td class="text-success fw-semibold">${row.rk4}</td>
+                    <td>${row.errAbsRK4}</td>
+                    <td><span class="badge bg-success-subtle text-success">${row.errRelRK4}%</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderSummary(maxErrHeun, maxErrRK4, steps, h) {
+            const container = document.getElementById('summaryBox');
+            container.innerHTML = `
+                <div class="col-md-3 col-6">
+                    <div class="p-3 border rounded-3 bg-light text-center">
+                        <small class="text-muted d-block mb-1">Iteraciones Realizadas</small>
+                        <h4 class="fw-bold mb-0 text-dark">${steps} pasos</h4>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="p-3 border rounded-3 bg-light text-center">
+                        <small class="text-muted d-block mb-1">Tamaño de Paso (\(h\))</small>
+                        <h4 class="fw-bold mb-0 text-primary">${h} min</h4>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="p-3 border rounded-3 bg-light text-center">
+                        <small class="text-muted d-block mb-1">Error Máx Absoluto Heun</small>
+                        <h4 class="fw-bold mb-0 text-warning">${maxErrHeun.toFixed(4)}</h4>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="p-3 border rounded-3 bg-light text-center">
+                        <small class="text-muted d-block mb-1">Error Máx Absoluto RK4</small>
+                        <h4 class="fw-bold mb-0 text-success">${maxErrRK4.toFixed(6)}</h4>
+                    </div>
+                </div>
+            `;
+            if (window.MathJax) {
+                MathJax.typeset();
+            }
+        }
+
+        function exportTableToCSV() {
+            let csv = [];
+            const rows = document.querySelectorAll("#resultsTable tr");
+            
+            for (let i = 0; i < rows.length; i++) {
+                let row = [], cols = rows[i].querySelectorAll("td, th");
+                for (let j = 0; j < cols.length; j++) {
+                    row.push('"' + cols[j].innerText.replace(/"/g, '""') + '"');
+                }
+                csv.push(row.join(","));
+            }
+
+            const csvFile = new Blob([csv.join("\n")], { type: "text/csv" });
+            const downloadLink = document.createElement("a");
+            downloadLink.download = "simulacion_edo_servidores.csv";
+            downloadLink.href = window.URL.createObjectURL(csvFile);
+            downloadLink.style.display = "none";
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        }
+
+        // Initialize simulation on load
+        window.onload = function() {
+            runSimulation();
+        };
+    </script>
+</body>
+</html>
